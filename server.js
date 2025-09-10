@@ -20,11 +20,11 @@ const transporter = nodemailer.createTransport({
 
 // ✅ Route to send email
 app.post('/send-email', async (req, res) => {
-  const { to, subject, text, html, cc, bcc } = req.body;
+  const { to, subject, text, html, cc, bcc, attachments } = req.body;
 
   // Normalize CC and BCC
-  const ccList = Array.isArray(cc) ? cc : [];
-  const bccList = Array.isArray(bcc) ? bcc : [];
+  const ccList = Array.isArray(cc) ? cc : cc ? [cc] : [];
+  const bccList = Array.isArray(bcc) ? bcc : bcc ? [bcc] : [];
 
   // Logging
   console.log('\n📤 Sending Email...');
@@ -32,6 +32,7 @@ app.post('/send-email', async (req, res) => {
   console.log('👥 CC:', ccList);
   console.log('👥 BCC:', bccList);
   console.log('📝 Subject:', subject);
+  console.log('📎 Attachments:', attachments?.length || 0);
 
   const mailOptions = {
     from: `"MLE ATS" <${process.env.SMTP_USER}>`,
@@ -41,6 +42,7 @@ app.post('/send-email', async (req, res) => {
     subject,
     text,
     html,
+    attachments: attachments || [], // ✅ Pass attachments if provided
   };
 
   try {
