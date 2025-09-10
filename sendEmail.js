@@ -1,45 +1,38 @@
-// send-email.js
-const sendEmail = async (
-  to,
-  subject,
-  text,
-  html,
-  cc = [],
-  jobData = null,
-  extraAttachments = []
-) => {
+import express from "express";
+import nodemailer from "nodemailer";
+
+const router = express.Router();
+
+router.post("/send-email", async (req, res) => {
   try {
-    let attachments = [...extraAttachments]; // start with any passed directly
+    const { to, subject, text, html, cc, attachments = [] } = req.body;
 
-    // ✅ Handle JD attachment if jobData exists
-    if (jobData?.jd_type === "upload" && jobData.jd_url) {
-      const urlParts = jobData.jd_url.split("/");
-      const originalName =
-        urlParts[urlParts.length - 1] || `JD_${jobData.title}.pdf`;
+    const transporter = nodemailer.createTransport({
+      service: "gmail", // or smtp config
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
 
-      attachments.push({
-        filename: originalName,
-        path: jobData.jd_url,
-      });
-    }
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to,
+      cc,
+      subject,
+      text,
+      html,
+      attachments, // ✅ forward directly
+    };
 
-    const response = await fetch(
-      process.env.NODE_ENV === "production"
-        ? "https://mle-ats.vercel.app/send-email"
-        : "http://localhost:4000/send-email",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to, subject, text, html, cc, attachments }),
-      }
-    );
+    const info = await transporter.sendMail(mailOptions);
+    console.log("✅ Email sent:", info.messageId, "Attachments:", attachments.length);
 
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.message || "Email failed");
-    console.log("✅ Email sent successfully");
+    res.json({ success: true, messageId: info.messageId, attachments: attachments.length });
   } catch (error) {
-    console.error("❌ Failed to send email:", error.message);
+    console.error("❌ Error sending email:", error);
+    res.status(500).json({ success: false, message: error.message });
   }
-};
+});
 
-export default sendEmail;
+export default router;
