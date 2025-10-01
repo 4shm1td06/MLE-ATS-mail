@@ -1,27 +1,33 @@
+// server.js
 const express = require('express');
 const cors = require('cors');
-const multer = require('multer'); // ✅ add multer
+const multer = require('multer'); // handle FormData file uploads
 require('dotenv').config();
-const fetch = require('node-fetch');
+const fetch = require('node-fetch'); // Node <18
 
-const upload = multer(); // in-memory storage
 const app = express();
+const upload = multer(); // in-memory storage
 
+// -----------------------
+// CORS
+// -----------------------
 app.use(cors({
-  origin: ['http://localhost:3000','https://mle-ats.vercel.app'],
+  origin: ['http://localhost:3000', 'https://mle-ats.vercel.app'],
   methods: ['GET','POST'],
   credentials: true,
 }));
 
-// No express.json() for FormData route
+// -----------------------
+// Ping route
+// -----------------------
 app.get('/ping', (req, res) => res.status(200).send('Server is alive'));
 
-// -------------------------
+// -----------------------
 // /send-email route
-// -------------------------
+// -----------------------
 app.post('/send-email', upload.single('resume'), async (req, res) => {
   const { to, subject, text, html } = req.body;
-  const resumeFile = req.file; // uploaded resume
+  const resumeFile = req.file; // uploaded file from FormData
 
   if (!to || !subject || (!text && !html)) {
     return res.status(400).json({ message: 'Missing required fields' });
@@ -50,6 +56,7 @@ app.post('/send-email', upload.single('resume'), async (req, res) => {
       ];
     }
 
+    // Send email via SendGrid
     const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
       method: 'POST',
       headers: {
@@ -71,5 +78,8 @@ app.post('/send-email', upload.single('resume'), async (req, res) => {
   }
 });
 
+// -----------------------
+// Start server
+// -----------------------
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`📡 Server running on port ${PORT}`));
