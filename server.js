@@ -1,33 +1,36 @@
 // server.js
 const express = require('express');
 const cors = require('cors');
-const multer = require('multer'); // handle FormData file uploads
+const multer = require('multer');
 require('dotenv').config();
-const fetch = require('node-fetch'); // Node <18
+const fetch = require('node-fetch'); // for Node <18
 
 const app = express();
 const upload = multer(); // in-memory storage
 
 // -----------------------
-// CORS
+// CORS configuration
 // -----------------------
-app.use(cors({
+const corsOptions = {
   origin: ['http://localhost:3000', 'https://mle-ats.vercel.app'],
-  methods: ['GET','POST'],
+  methods: ['GET', 'POST', 'OPTIONS'],
   credentials: true,
-}));
+};
+
+// Handle preflight requests for all routes
+app.options('*', cors(corsOptions));
 
 // -----------------------
 // Ping route
 // -----------------------
-app.get('/ping', (req, res) => res.status(200).send('Server is alive'));
+app.get('/ping', cors(corsOptions), (req, res) => res.status(200).send('Server is alive'));
 
 // -----------------------
 // /send-email route
 // -----------------------
-app.post('/send-email', upload.single('resume'), async (req, res) => {
+app.post('/send-email', cors(corsOptions), upload.single('resume'), async (req, res) => {
   const { to, subject, text, html } = req.body;
-  const resumeFile = req.file; // uploaded file from FormData
+  const resumeFile = req.file; // uploaded file
 
   if (!to || !subject || (!text && !html)) {
     return res.status(400).json({ message: 'Missing required fields' });
@@ -56,7 +59,6 @@ app.post('/send-email', upload.single('resume'), async (req, res) => {
       ];
     }
 
-    // Send email via SendGrid
     const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
       method: 'POST',
       headers: {
@@ -83,3 +85,4 @@ app.post('/send-email', upload.single('resume'), async (req, res) => {
 // -----------------------
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`📡 Server running on port ${PORT}`));
+// new
