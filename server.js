@@ -8,7 +8,7 @@ const upload = multer(); // in-memory storage
 const app = express();
 
 app.use(cors({
-  origin: 'https://mle-ats.vercel.app',
+  origin: ['http://localhost:3000','https://mle-ats.vercel.app'],
   methods: ['GET','POST'],
   credentials: true,
 }));
