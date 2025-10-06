@@ -3,7 +3,8 @@ const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 require('dotenv').config();
-const fetch = require('node-fetch'); // for Node <18
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+
 
 const app = express();
 const upload = multer(); // in-memory storage
