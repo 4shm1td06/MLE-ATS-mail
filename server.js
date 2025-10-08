@@ -5,31 +5,29 @@ const multer = require('multer');
 require('dotenv').config();
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
-
 const app = express();
 const upload = multer(); // in-memory storage
 
 // -----------------------
-// CORS configuration
+// Middleware
 // -----------------------
-const corsOptions = {
+app.use(express.json()); // <-- ✅ Parse JSON bodies
+app.use(express.urlencoded({ extended: true })); // <-- ✅ Parse form-urlencoded
+app.use(cors({
   origin: ['http://localhost:3000', 'https://mle-ats.vercel.app'],
   methods: ['GET', 'POST', 'OPTIONS'],
   credentials: true,
-};
-
-// Handle preflight requests for all routes
-app.options('*', cors(corsOptions));
+}));
 
 // -----------------------
 // Ping route
 // -----------------------
-app.get('/ping', cors(corsOptions), (req, res) => res.status(200).send('Server is alive'));
+app.get('/ping', (req, res) => res.status(200).send('Server is alive'));
 
 // -----------------------
 // /send-email route
 // -----------------------
-app.post('/send-email', cors(corsOptions), upload.single('resume'), async (req, res) => {
+app.post('/send-email', upload.single('resume'), async (req, res) => {
   const { to, subject, text, html } = req.body;
   const resumeFile = req.file; // uploaded file
 
@@ -86,4 +84,3 @@ app.post('/send-email', cors(corsOptions), upload.single('resume'), async (req, 
 // -----------------------
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`📡 Server running on port ${PORT}`));
-// new
